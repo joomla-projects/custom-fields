@@ -128,9 +128,24 @@ class FieldsHelper
 					$dispatcher = JEventDispatcher::getInstance();
 					$dispatcher->trigger('onFieldBeforePrepare', array($context, $item, &$field));
 
-					// Prepare the value from the type layout
-					$value = self::render($context, 'field.prepare.' . $field->type, array('field' => $field));
+					if ($output = $field->params->get('output'))
+					{
+						try
+						{
+							$m     = new Mustache_Engine;
+							$value = $m->render($output, $field);
+						}
+						catch (Exception $e)
+						{
+							JFactory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
+						}
+					}
 
+					if (! $value)
+					{
+						// Prepare the value from the type layout
+						$value = self::render($context, 'field.prepare.' . $field->type, array('field' => $field));
+					}
 					// If the value is empty, render the base layout
 					if (! $value)
 					{
