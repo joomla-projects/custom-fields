@@ -10,9 +10,22 @@ defined('_JEXEC') or die;
 
 use Joomla\Registry\Registry;
 
+/**
+ * Fields Model
+ *
+ * @since  3.7
+ */
 class FieldsModelFields extends JModelList
 {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param   array  $config  An optional associative array of configuration settings.
+	 *
+	 * @see     JModelLegacy
+	 * @since   12.2
+	 */
 	public function __construct ($config = array())
 	{
 		if (empty($config['filter_fields']))
@@ -51,6 +64,22 @@ class FieldsModelFields extends JModelList
 		parent::__construct($config);
 	}
 
+	/**
+	 * Method to auto-populate the model state.
+	 *
+	 * This method should only be called once per instantiation and is designed
+	 * to be called on the first call to the getState() method unless the model
+	 * configuration flag to ignore the request is set.
+	 *
+	 * Note. Calling getState in this method will result in recursion.
+	 *
+	 * @param   string  $ordering   An optional ordering field.
+	 * @param   string  $direction  An optional direction (asc|desc).
+	 *
+	 * @return  void
+	 *
+	 * @since   12.2
+	 */
 	protected function populateState ($ordering = null, $direction = null)
 	{
 		$app = JFactory::getApplication();
@@ -98,6 +127,19 @@ class FieldsModelFields extends JModelList
 		}
 	}
 
+	/**
+	 * Method to get a store id based on the model configuration state.
+	 *
+	 * This is necessary because the model is used by the component and
+	 * different modules that might need different sets of data or different
+	 * ordering requirements.
+	 *
+	 * @param   string  $id  An identifier string to generate the store id.
+	 *
+	 * @return  string  A store id.
+	 *
+	 * @since   12.2
+	 */
 	protected function getStoreId ($id = '')
 	{
 		// Compile the store id.
@@ -110,6 +152,13 @@ class FieldsModelFields extends JModelList
 		return parent::getStoreId($id);
 	}
 
+	/**
+	 * Method to get a JDatabaseQuery object for retrieving the data set from a database.
+	 *
+	 * @return  JDatabaseQuery   A JDatabaseQuery object to retrieve the data set.
+	 *
+	 * @since   12.2
+	 */
 	protected function getListQuery ()
 	{
 		// Create a new query object.
@@ -122,7 +171,8 @@ class FieldsModelFields extends JModelList
 		$query->from('#__fields AS a');
 
 		// Join over the language
-		$query->select('l.title AS language_title, l.image AS language_image')->join('LEFT', $db->quoteName('#__languages') . ' AS l ON l.lang_code = a.language');
+		$query->select('l.title AS language_title, l.image AS language_image')
+			->join('LEFT', $db->quoteName('#__languages') . ' AS l ON l.lang_code = a.language');
 
 		// Join over the users for the checked out user.
 		$query->select('uc.name AS editor')->join('LEFT', '#__users AS uc ON uc.id=a.checked_out');
@@ -134,7 +184,7 @@ class FieldsModelFields extends JModelList
 		$query->select('ua.name AS author_name')->join('LEFT', '#__users AS ua ON ua.id = a.created_user_id');
 
 		// Join over the categories.
-		$query->select('c.title as category_title')->join('LEFT', '#__categories AS c ON c.id = a.catid');
+		$query->select('c.title as category_title, c.access, c.published')->join('LEFT', '#__categories AS c ON c.id = a.catid');
 
 		// Filter by context
 		if ($context = $this->getState('filter.context'))
@@ -192,7 +242,7 @@ class FieldsModelFields extends JModelList
 		if (! $user->authorise('core.admin'))
 		{
 			$groups = implode(',', $user->getAuthorisedViewLevels());
-			$query->where('a.access IN (' . $groups . ')');
+			$query->where('a.access IN (' . $groups . ') AND (c.id IS NULL OR c.access IN (' . $groups . '))');
 		}
 
 		// Filter by published state
@@ -200,11 +250,11 @@ class FieldsModelFields extends JModelList
 
 		if (is_numeric($published))
 		{
-			$query->where('a.state = ' . (int) $published);
+			$query->where('a.state = ' . (int) $published . ' AND (c.id IS NULL OR c.published = ' . (int) $published . ')');
 		}
 		elseif ($published === '')
 		{
-			$query->where('(a.state IN (0, 1))');
+			$query->where('a.state IN (0, 1) AND (c.id IS NULL OR c.published IN (0, 1))');
 		}
 
 		// Filter by search in title
@@ -231,7 +281,7 @@ class FieldsModelFields extends JModelList
 		// Filter on the language.
 		if ($language = $this->getState('filter.language'))
 		{
-			$language = (array)$language;
+			$language = (array) $language;
 			foreach ($language as $key => $l)
 			{
 				$language[$key] = $db->quote($l);
@@ -247,7 +297,8 @@ class FieldsModelFields extends JModelList
 			$query->where($db->quoteName('tagmap.tag_id') . ' = ' . (int) $tagId)
 				->join('LEFT',
 					$db->quoteName('#__contentitem_tag_map', 'tagmap') . ' ON ' . $db->quoteName('tagmap.content_item_id') . ' = ' .
-							 $db->quoteName('a.id') . ' AND ' . $db->quoteName('tagmap.type_alias') . ' = ' . $db->quote($context . '.field'));
+					$db->quoteName('a.id') . ' AND ' . $db->quoteName('tagmap.type_alias') . ' = ' . $db->quote($context . '.field')
+			);
 		}
 
 		// Add the list ordering clause
@@ -266,6 +317,18 @@ class FieldsModelFields extends JModelList
 		return $query;
 	}
 
+	/**
+	 * Gets an array of objects from the results of database query.
+	 *
+	 * @param   string   $query       The query.
+	 * @param   integer  $limitstart  Offset.
+	 * @param   integer  $limit       The number of records.
+	 *
+	 * @return  array  An array of results.
+	 *
+	 * @since   12.2
+	 * @throws  RuntimeException
+	 */
 	protected function _getList ($query, $limitstart = 0, $limit = 0)
 	{
 		$result = parent::_getList($query, $limitstart, $limit);
@@ -282,6 +345,16 @@ class FieldsModelFields extends JModelList
 		return $result;
 	}
 
+	/**
+	 * Get the filter form
+	 *
+	 * @param   array    $data      data
+	 * @param   boolean  $loadData  load current data
+	 *
+	 * @return  JForm/false  the JForm object or false
+	 *
+	 * @since   3.2
+	 */
 	public function getFilterForm ($data = array(), $loadData = true)
 	{
 		$form = parent::getFilterForm($data, $loadData);

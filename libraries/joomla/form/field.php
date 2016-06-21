@@ -1068,9 +1068,10 @@ abstract class JFormField
 	 * is the default implementation of a field. Form fields which do support to be transformed into
 	 * an XML Element mut implemet the JFormDomfieldinterface.
 	 *
-	 * @param stdClass $field
-	 * @param DOMElement $parent
-	 * @param JForm $form
+	 * @param   stdClass    $field   The field.
+	 * @param   DOMElement  $parent  The field node parent.
+	 * @param   JForm       $form    The form.
+	 *
 	 * @return DOMElement
 	 *
 	 * @since 3.7
@@ -1083,7 +1084,7 @@ abstract class JFormField
 		{
 			return;
 		}
-		else if ($field->params->get('show_on') == 2 && $app->isSite())
+		elseif ($field->params->get('show_on') == 2 && $app->isSite())
 		{
 			return;
 		}
@@ -1095,6 +1096,7 @@ abstract class JFormField
 		$node->setAttribute('label', $field->label);
 		$node->setAttribute('description', $field->description);
 		$node->setAttribute('class', $field->class);
+		$node->setAttribute('hint', $field->params->get('hint', 0));
 		$node->setAttribute('required', $field->required ? 'true' : 'false');
 		$node->setAttribute('readonly', $field->params->get('readonly', 0) ? 'true' : 'false');
 
@@ -1122,9 +1124,11 @@ abstract class JFormField
 	 * Function to manipulate the DOM element of the field. The form can be
 	 * manipulated at that point.
 	 *
-	 * @param stdClass $field
-	 * @param DOMElement $fieldNode
-	 * @param JForm $form
+	 * @param   stdClass    $field      The field.
+	 * @param   DOMElement  $fieldNode  The field node.
+	 * @param   JForm       $form       The form.
+	 *
+	 * @return void
 	 *
 	 * @since 3.7
 	 */

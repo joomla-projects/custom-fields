@@ -157,7 +157,8 @@ class JFormFieldList extends JFormField implements JFormDomfieldinterface
 	/**
 	 * Returns an array of key values to put in a list from the given field.
 	 *
-	 * @param stdClass $field
+	 * @param   stdClass  $field  The field.
+	 *
 	 * @return array
 	 */
 	public static function getOptionsFromField($field)
@@ -168,9 +169,9 @@ class JFormFieldList extends JFormField implements JFormDomfieldinterface
 			$options = json_decode($options);
 		}
 		$data = array();
-		if (isset($options->key))
+		if (isset($options->name))
 		{
-			foreach ($options->key as $index => $key)
+			foreach ($options->name as $index => $key)
 			{
 				$data[$key] = $options->value[$index];
 			}
@@ -178,11 +179,23 @@ class JFormFieldList extends JFormField implements JFormDomfieldinterface
 		return $data;
 	}
 
+	/**
+	 * Function to manipulate the DOM element of the field. The form can be
+	 * manipulated at that point.
+	 *
+	 * @param   stdClass    $field      The field.
+	 * @param   DOMElement  $fieldNode  The field node.
+	 * @param   JForm       $form       The form.
+	 *
+	 * @return void
+	 *
+	 * @since 3.7
+	 */
 	protected function postProcessDomNode($field, DOMElement $fieldNode, JForm $form)
 	{
-		foreach (self::getOptionsFromField($field) as $index => $value)
+		foreach (self::getOptionsFromField($field) as $index => $name)
 		{
-			$element = $fieldNode->appendChild(new DOMElement('option', $value));
+			$element = $fieldNode->appendChild(new DOMElement('option', $name));
 			$element->setAttribute('value', $index);
 		}
 

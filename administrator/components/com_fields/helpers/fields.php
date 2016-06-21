@@ -8,12 +8,10 @@
  */
 defined('_JEXEC') or die;
 
-use Joomla\String\StringHelper;
-
 /**
  * FieldsHelper
  *
- * @since  3.6
+ * @since  3.7
  */
 class FieldsHelper
 {
@@ -236,11 +234,11 @@ class FieldsHelper
 
 		$assignedCatids = isset($data->catid) ? $data->catid : (isset($data->fieldscatid) ? $data->fieldscatid : null);
 
-		if (! $assignedCatids && $form->getField('assigned_cat_ids'))
+		if (! $assignedCatids && $form->getField('catid'))
 		{
 			// Choose the first category available
 			$xml     = new DOMDocument;
-			$xml->loadHTML($form->getField('assigned_cat_ids')->__get('input'));
+			$xml->loadHTML($form->getField('catid')->__get('input'));
 			$options = $xml->getElementsByTagName('option');
 
 			if ($firstChoice = $options->item(0))
@@ -322,6 +320,9 @@ class FieldsHelper
 			$fieldsPerCategory[$field->catid][] = $field;
 		}
 
+		// On the front, sometimes the admin fields path is not included
+		JFormHelper::addFieldPath(JPATH_ADMINISTRATOR . '/components/' . $component . '/models/fields');
+
 		// Looping trough the categories
 		foreach ($fieldsPerCategory as $catid => $catFields)
 		{
@@ -383,7 +384,7 @@ class FieldsHelper
 			}
 
 			$fieldset->setAttribute('label', $label);
-			$fieldset->setAttribute('description', $description);
+			$fieldset->setAttribute('description', strip_tags($description));
 
 			// Looping trough the fields for that context
 			foreach ($catFields as $field)
@@ -425,7 +426,8 @@ class FieldsHelper
 				'ignore_request' => true)
 		);
 
-		if ((! isset($data->id) || !$data->id) && JFactory::getApplication()->input->getCmd('controller') == 'config.display.modules' && JFactory::getApplication()->isSite())
+		if ((! isset($data->id) || !$data->id) && JFactory::getApplication()->input->getCmd('controller') == 'config.display.modules'
+			&& JFactory::getApplication()->isSite())
 		{
 			// Modules on front end editing don't have data and an id set
 			$data->id = $input->getInt('id');
