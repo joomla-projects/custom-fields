@@ -489,8 +489,7 @@ class PlgSystemFields extends JPlugin
 		// If we don't meet all the requirements return
 		if (!isset($item->id) || !$item->id || !isset($item->text)
 			|| !$item->text || !JString::strpos($item->text, 'fields') !== false
-			|| !$this->params->get('prepare_content', '1')
-		)
+			|| !$this->params->get('prepare_content', '1'))
 		{
 			return true;
 		}
@@ -508,10 +507,7 @@ class PlgSystemFields extends JPlugin
 			$start  = $starts[0][1] + strlen($starts[0][0]);
 			$end    = $ends[0][1];
 
-			$params = explode(' ', str_replace(array(
-					'{{#fields',
-					'}}',
-			), '', $starts[0][0]));
+			$params = explode(' ', str_replace(array('{{#fields','}}'), '', $starts[0][0]));
 
 			// Clone the fields because we are manipulating the array and need
 			// it on the next iteration again
@@ -574,11 +570,11 @@ class PlgSystemFields extends JPlugin
 
 			try
 			{
-				$m = new Mustache_Engine();
-				$output = $m->render('{{#fields}}' . substr($item->text, $start, $end - $start) . '{{/fields}}',
-						array(
-								'fields' => $contextFields
-						));
+				$m = new Mustache_Engine;
+				$output = $m->render(
+						'{{#fields}}' . substr($item->text, $start, $end - $start) . '{{/fields}}',
+						array('fields' => $contextFields)
+				);
 
 				// Set the output on the item
 				$item->text = substr_replace($item->text, $output, $starts[0][1], $end + 11 - $starts[0][1]);
